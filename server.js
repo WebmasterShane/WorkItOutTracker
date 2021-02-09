@@ -2,7 +2,7 @@ const express = require("express");
 const path = require("path");
 const mongoose = require("mongoose");
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3005;
 
 // requires the content in the models folder
 const db = require("./models");
@@ -13,23 +13,23 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// route that calls the the home page
+// homepage route
 app.use(express.static("public"));
 
-// connects to the workout database
+// database connection
 mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/workout", {
 	useNewUrlParser: true,
 });
 
-// route for the exercise page
+// Get routes
 app.get("/exercise", (req, res) => {
 	res.sendFile(path.join(__dirname, "./public/exercise.html"));
 });
-// route for the stats page
+
 app.get("/stats", (req, res) => {
 	res.sendFile(path.join(__dirname, "./public/stats.html"));
 });
-// Route that call workout data from API
+
 app.get("/api/workouts", (req, res) => {
 	db.Workout.find({}, null, { sort: { day: 1 } })
 		.populate("exercises")
@@ -41,7 +41,18 @@ app.get("/api/workouts", (req, res) => {
 		});
 });
 
-// Route to update workout data - referenced activity 14
+app.get("/api/workouts/range", (req, res) => {
+	db.Workout.find({}, null, { sort: { day: 1 } })
+		.populate("exercises")
+		.then((dbWorkout) => {
+			res.json(dbWorkout);
+		})
+		.catch((err) => {
+			res.json(err);
+		});
+});
+
+// Update workout info
 app.put("/api/workouts/:id", (req, res) => {
 	var workoutID = req.params.id;
 	db.Exercise.create(req.body)
@@ -60,7 +71,7 @@ app.put("/api/workouts/:id", (req, res) => {
 		});
 });
 
-// Route to create new workout
+// Create new workout route
 app.post("/api/workouts", (req, res) => {
 	db.Workout.create(req.body)
 		.then((dbWorkout) => {
@@ -71,19 +82,7 @@ app.post("/api/workouts", (req, res) => {
 		});
 });
 
-// Route to populate workout dashboard
-app.get("/api/workouts/range", (req, res) => {
-	db.Workout.find({}, null, { sort: { day: 1 } })
-		.populate("exercises")
-		.then((dbWorkout) => {
-			res.json(dbWorkout);
-		})
-		.catch((err) => {
-			res.json(err);
-		});
-});
-
-// Listens for server port
+// server port
 app.listen(PORT, () => {
 	console.log(`App running on port ${PORT}!`);
 });
